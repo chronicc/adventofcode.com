@@ -8,7 +8,14 @@ import (
 	"strconv"
 )
 
+var decMeasurement int
+var incMeasurement int
+var lastMeasurement int = -1
+var measurement int
+var measurements = []int{-1, -1, -1}
 var path string = "input.txt"
+var slidingWindowIndex int
+var slidingWindowMod int
 
 func main() {
 	var file, err = os.OpenFile(path, os.O_RDONLY, 0644)
@@ -18,11 +25,6 @@ func main() {
 	}
 	defer file.Close()
 
-	var lastMeasurement int = -1
-	var incMeasurement int = 0
-	var decMeasurement int = 0
-	var measurement int = 0
-
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		measurement, err = strconv.Atoi(scanner.Text())
@@ -31,25 +33,42 @@ func main() {
 			continue
 		}
 
-		if lastMeasurement == -1 {
-			fmt.Println("(N/A - no previous measurement)")
-		} else if measurement == lastMeasurement {
-			fmt.Println("(no difference)")
-		} else if measurement > lastMeasurement {
-			fmt.Println("(increased)")
-			incMeasurement++
-		} else if measurement < lastMeasurement {
-			fmt.Println("(decreased)")
-			decMeasurement++
+		measurements[2] = measurements[1]
+		measurements[1] = measurements[0]
+		measurements[0] = measurement
+
+		if measurements[2] != -1 {
+			currentMeasurement := sumOverArray(measurements)
+
+			if lastMeasurement == -1 {
+				fmt.Println("(N/A - no previous sum)")
+			} else if currentMeasurement == lastMeasurement {
+				fmt.Println("(no change)")
+			} else if currentMeasurement > lastMeasurement {
+				fmt.Println("(increased)")
+				incMeasurement++
+			} else if currentMeasurement < lastMeasurement {
+				fmt.Println("(decreased)")
+				decMeasurement++
+			}
+
+			lastMeasurement = currentMeasurement
 		}
 
-		lastMeasurement = measurement
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Increased measurements: %v\n", incMeasurement)
-	fmt.Printf("Decreased measurements: %v\n", decMeasurement)
+	fmt.Printf("Increased three-measurements: %v\n", incMeasurement)
+	fmt.Printf("Decreased three-measurements: %v\n", decMeasurement)
+}
+
+func sumOverArray(a []int) int {
+	sum := 0
+	for _, v := range a {
+		sum += v
+	}
+	return sum
 }
